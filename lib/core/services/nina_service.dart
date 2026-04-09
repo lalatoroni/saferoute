@@ -41,9 +41,14 @@ class NinaService {
 
   List<List<double>> _parsePolygon(String raw) {
     // Format: "lat,lon lat,lon ..."
-    return raw.trim().split(' ').where((s) => s.contains(',')).map((pair) {
-      final parts = pair.split(',');
-      return [double.parse(parts[1]), double.parse(parts[0])]; // [lon, lat]
-    }).toList();
+    try {
+      return raw.trim().split(' ').where((s) => s.contains(',')).map((pair) {
+        final parts = pair.split(',');
+        if (parts.length < 2) return <double>[];
+        return [double.parse(parts[1]), double.parse(parts[0])]; // [lon, lat]
+      }).where((p) => p.length == 2).toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

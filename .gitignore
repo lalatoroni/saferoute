@@ -43,3 +43,30 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment & secrets
+.env*
+*.env
+
+# Local properties
+local.properties
+
+# Large binaries
+*.dmg
+*.iso
+*.zip
+*.tar.gz
+
+# Python generator scripts (contain local paths)
+generate_*.py
+
+# IDE / Claude
+.claude/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated mockups
+saferoute_*.png
