@@ -205,8 +205,8 @@ class _MapScreenState extends State<MapScreen> {
                   points: z.polygon
                       .map((p) => LatLng(p[1], p[0]))
                       .toList(),
-                  color: _orange.withOpacity(0.15),
-                  borderColor: _orange.withOpacity(0.6),
+                  color: _orange.withValues(alpha: 0.15),
+                  borderColor: _orange.withValues(alpha: 0.6),
                   borderStrokeWidth: 2,
                 )).toList(),
               ),
@@ -306,12 +306,12 @@ class _MapScreenState extends State<MapScreen> {
                   ],
                 ),
                 const Divider(color: Color(0xFF1A2234), height: 16),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Route aktualisiert.',
+                    Text('Route aktualisiert.',
                         style: TextStyle(color: _textDim, fontSize: 13)),
-                    const Text('via Autobahn',
+                    Text('via Autobahn',
                         style: TextStyle(
                             color: _textDim,
                             fontSize: 13,

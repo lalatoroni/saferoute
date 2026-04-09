@@ -19,7 +19,7 @@ class OnboardingScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-              _Section(
+              const _Section(
                 title: 'Was SafeRoute über dich weiß:',
                 items: [
                   'Deinen Standort (nur lokal)',
@@ -28,7 +28,7 @@ class OnboardingScreen extends StatelessWidget {
                 color: _textMain,
               ),
               const SizedBox(height: 40),
-              _Section(
+              const _Section(
                 title: 'Was SafeRoute nie wissen wird:',
                 items: [
                   'Deinen Namen',
