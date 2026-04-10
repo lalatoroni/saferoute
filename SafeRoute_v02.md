@@ -35,22 +35,23 @@ Menschen in Krisensituationen (Krieg, Naturkatastrophen, Blackout) haben kein To
 3. **Offline-KI-Assistent** – Gemma 4 (2B) lokal auf dem Gerät: Fragen stellen, Situationsanalyse, Entscheidungshilfe
 4. **Gefahren-Layer** – Echtzeit-Warnungen von NINA, KATWARN, GDACS, DWD als Overlay auf der Karte
 5. **Background-Sync** – App aktualisiert Gefahrendaten im Hintergrund ohne aktive Öffnung. Letzter Sync-Zeitpunkt immer prominent sichtbar.
-6. **Stilles Social-Media-Routing** – Öffentliche Social-Media-Signale (Telegram, X) fließen gewichtet ins Routing-System ein, NICHT in die UI. Der Nutzer sieht nur das Ergebnis: eine aktualisierte Route.
+6. **Social-Media-Routing** – Öffentliche Social-Media-Signale (Telegram, X) werden on-device auf Plausibilität geprüft (Anti-Fake) und fließen gewichtet ins Routing ein. Verifizierte Meldungen erscheinen zusätzlich als Gefahren-Layer auf der Karte. Der Nutzer sieht nur einen einzeiligen Hinweis: *„Soziale Quellen einbezogen."* oder *„Nur Behördendaten."*
 
-### Routing-Gewichtungslogik (intern, nicht sichtbar)
+### Routing-Gewichtungslogik (intern, nicht sichtbar für Nutzer)
 
 ```
-Quelle              | Gewicht | Bedingung
---------------------|---------|------------------------------------------
-NINA                |   10    | Immer
-KATWARN             |    9    | Immer
-GDACS / DWD         |    8    | Immer
-Telegram (öffentl.) |    3    | Geo-Tag vorhanden + min. 50 Weiterleitungen
-X (öffentl.)        |    2    | Geo-Tag vorhanden + min. 100 Interaktionen
+Quelle                        | Gewicht | Bedingung
+------------------------------|---------|------------------------------------------------
+NINA                          |   10    | Immer
+KATWARN                       |    9    | Immer
+GDACS / DWD                   |    8    | Immer
+Social Media (verifiziert)    |    5    | Anti-Fake bestanden (Score ≥ 70)
+Social Media (nicht verifiz.) |    2    | Geo-Tag + min. 50 Weiterleitungen / 100 Interakt.
 ```
 
-Routing-Entscheidung: Gewichteter Score → Gefahrenzone wird gemieden, wenn Schwellenwert überschritten.
-UI-Hinweis bei Routenänderung: Einzeiliger, nicht-modaler Text: *„Route aktualisiert."*
+Anti-Fake-Prüfung (on-device, Gemma 2B): Geo-Konsistenz · Zeitfenster (≤ 2h) · Quellenstreuung (≥ 3 unabh. Accounts) · Clickbait-Erkennung → Score 0–100; Routing-Einfluss nur ab Score ≥ 70.
+
+UI-Hinweis: Einzeiliger, nicht-modaler Text — *„Route aktualisiert."* + *„Soziale Quellen einbezogen."* / *„Nur Behördendaten."*
 
 ### Erweiterungen (Post-MVP)
 
@@ -65,7 +66,7 @@ UI-Hinweis bei Routenänderung: Einzeiliger, nicht-modaler Text: *„Route aktua
 
 **Primär: B2C – Einfache Zivilbevölkerung im DACH-Raum**
 
-> Bewusste Entscheidung gegen B2G: Behördenprojekte erreichen den normalen Bürger kaum. SafeRoute gehört den Menschen, nicht den Institutionen.
+> SafeRoute gehört allen — kostenlos, open source, ohne Institutionen als Mittler. Behördenprojekte erreichen den normalen Bürger strukturell kaum. Diese App ist direkt für die Menschen gemacht.
 
 | Segment | Beschreibung | Bedürfnis |
 |---|---|---|
@@ -129,10 +130,11 @@ UI-Hinweis bei Routenänderung: Einzeiliger, nicht-modaler Text: *„Route aktua
 
 ### KI-Scope (fixiert – nicht erweiterbar ohne explizite Entscheidung)
 
-Gemma 2B beantwortet in SafeRoute genau drei Dinge:
+Gemma 2B beantwortet in SafeRoute genau vier Dinge:
 1. **Situationsfragen des Nutzers** – „Ist diese Route sicher?" / „Was soll ich mitnehmen?"
-2. **Gewichtungsentscheidung Social-Media-Signale** – Plausibilitätsprüfung eingehender Posts gegen geografische und zeitliche Konsistenz
-3. **Routenentscheidungslogik** – Aggregation aller Gewichtungsscores zur finalen Routenwahl
+2. **Plausibilitätsprüfung Social-Routing-Signale** – Einfache Geo/Interaktions-Prüfung für stilles Routing (Gewicht 2–3)
+3. **Anti-Fake-Analyse für Social-Gefahren-Layer** – Vollständige 5-stufige Plausibilitätsprüfung (Geo, Zeit, Quellenstreuung, Sprache) → Vertrauens-Score 0–100; Anzeige nur ab ≥ 70
+4. **Routenentscheidungslogik** – Aggregation aller Gewichtungsscores zur finalen Routenwahl
 
 Alles andere ist kein KI-Problem.
 
@@ -179,8 +181,11 @@ Phase 2 – KI & Profil (Monate 4–6)            [Hobby+]
 └── Sync-Latenz messen → KPI ≤ 10 Min. validieren
 
 Phase 3 – Social Routing (Monate 7–9)         [Open Source Launch]
-├── Telegram / X Feed (stilles Routing-Signal)
-├── Gewichtungslogik implementieren
+├── Telegram / X Feed anbinden (öffentliche Geo-getaggte Posts)
+├── Anti-Fake-Pipeline on-device (Gemma 2B): Geo · Zeit · Quellenstreuung · Sprache
+├── Routing-Gewichtungslogik implementieren (Score ≥ 70 → Einfluss)
+├── Gefahren-Layer Karte: verifizierte Social-Meldungen sichtbar machen
+├── UI-Hinweis: „Soziale Quellen einbezogen." / „Nur Behördendaten." (einzeilig, kein Modal)
 ├── Verhaltenstest: mit vs. ohne Social Routing
 └── Community-Onboarding + Contributor Guidelines
 
@@ -188,7 +193,7 @@ Phase 4 – Skalierung (ab Monat 10)            [ggf. Prototype Fund]
 ├── iOS + Android App Store Launch
 ├── Mehrsprachigkeit (DE/AT/CH/EN)
 ├── Post-Krisen-Feedback-Schleife aktivieren
-└── Premium-Layer Entwicklung
+└── Barrierefreiheit prüfen (große Schrift, Kontrast, Screenreader)
 ```
 
 ---
@@ -207,27 +212,22 @@ Nach jeder dokumentierten Nutzung in einer realen Krisenlage:
 
 ---
 
-## 11. Business Case
+## 11. Open Source Haltung
 
-### Kostenrahmen MVP (Hobby-Phase)
+SafeRoute ist und bleibt Open Source — nicht als Marketingstrategie, sondern als ethische Grundlage.
 
-| Posten | Einmalig | Monatlich |
-|---|---|---|
-| Entwicklung (Eigenleistung) | – | – |
-| Hosting / Backend | – | 50–100 € |
-| API-Kosten (Social, etc.) | – | 0–50 € |
-| App Store Accounts | 100 € | – |
-| **Gesamt** | **~100 €** | **~100–150 €** |
+**Kostenlos. Für alle. Ohne Ausnahme.** SafeRoute hat kein Freemium-Modell, keine Premium-Stufe, keine Paywall. Eine App für Krisensituationen darf nicht davon abhängen, ob jemand ein Abo bezahlt hat.
 
-### Erlösmodell (ab Phase 4)
+**MIT-Lizenz.** Jeder kann den Code lesen, prüfen, forken, verbessern. Keine versteckten Algorithmen, keine Black-Box-Entscheidungen über Routen.
 
-| Modell | Beschreibung | Potenzial |
-|---|---|---|
-| Freemium | Basis kostenlos, Premium 2–4 €/Monat (erw. Offline-KI, Social Routing) | ⭐⭐⭐⭐ |
-| Prototype Fund | BMBF-Förderung bis 47.500 € für Open-Source-Projekte | ⭐⭐⭐⭐⭐ |
-| B2B | Unternehmen mit Auslandsentsandten, Reiseversicherungen | ⭐⭐⭐ |
+**Warum das wichtig ist:** Eine App, die Menschen in Krisensituationen navigiert, muss vollständig transparent sein. Code-Transparenz ist hier kein Nice-to-have, sondern Voraussetzung für Vertrauen.
 
-> B2G wurde bewusst ausgeschlossen. Behördenprojekte erreichen den normalen Bürger strukturell kaum. SafeRoute bleibt B2C.
+**Haltung gegenüber externen Interessen:** Wenn kommerzielle oder staatliche Interessen an SafeRoute herantreten, gilt: Open-Source-Lizenz und Community-Governance haben Vorrang. Schriftliche Haltungsdefinition wird vor dem ersten Release veröffentlicht.
+
+**Contributor-Prinzipien:**
+- Keine Features ohne explizite Entscheidung (Anti-Scope-Creep)
+- KI-Scope bleibt fixiert — Erweiterungen nur durch dokumentierten Community-Entscheid
+- Sicherheitslücken werden öffentlich disclosed, nicht still gepatcht
 
 ---
 
@@ -236,7 +236,8 @@ Nach jeder dokumentierten Nutzung in einer realen Krisenlage:
 | Risiko | Wahrscheinlichkeit | Maßnahme |
 |---|---|---|
 | Falsche Routen im Krisenfall | Mittel | Disclaimer + konservative Gewichtungslogik + Latenz-KPI |
-| Social-Media-Signal erzeugt Fehlerroute | Mittel | Gewicht 2–3 (sehr niedrig), nur bei Geo-Tag + hoher Interaktion |
+| Social-Media-Signal erzeugt Fehlerroute | Mittel | Anti-Fake Score < 70 → kein Routing-Einfluss; unverifizierte Signale max. Gewicht 2 |
+| Fake-Meldung übersteht Anti-Fake-Prüfung | Niedrig | Konservative Score-Schwelle (≥ 70) + Quellenstreuung (≥ 3 Accounts) als Doppelschutz |
 | Datenschutzverletzung | Niedrig | Alles lokal, Social-Daten nie gespeichert, DSFA vor Launch |
 | Scope Creep | Hoch | KI-Scope fixiert (3 Funktionen), Phase-by-Phase, kein Feature ohne Entscheidung |
 | Vertrauensverlust durch stille Routenänderung | Mittel | Einzeiliger UI-Hinweis „Route aktualisiert." – kein Modal |
@@ -254,7 +255,6 @@ Nach jeder dokumentierten Nutzung in einer realen Krisenlage:
 - [ ] KI-Scope schriftlich fixieren (3 Funktionen – vor erster Codezeile)
 - [ ] Onboarding-Screen als Datentransparenz-Statement formulieren
 - [ ] Ersten Verhaltenstest planen (10 Probanden, simulierter Stress, Phase 1 Ende)
-- [ ] Prototype Fund Bewerbungsfristen prüfen (prototypefund.de)
 - [ ] Haltungsdokument schreiben: Was tun wir, wenn Interessen kommen?
 - [ ] Rechtlichen Disclaimer formulieren
 - [ ] Ersten Entwicklungspartner / Mitstreiter suchen
